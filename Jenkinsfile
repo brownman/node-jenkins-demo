@@ -13,7 +13,6 @@ node {
     stage('prepare') {
         git url: "https://github.com/brownman/${repo_name}.git"
         sh 'ls -la'
-        sh 'env > /tmp/env1'
     }
 
     // stage('SCM Checkout') {
@@ -54,7 +53,12 @@ node {
         // } //stage
 
     stage('Push Docker Image') {
-        withCredentials([usernamePassword(credentialsId: 'docker_hub_access_token', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+
+                if (env.BRANCH_NAME == 'master') {
+            echo 'I only execute on the master branch'
+
+
+                    withCredentials([usernamePassword(credentialsId: 'docker_hub_access_token', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                 //   sh 'echo $USERNAME -p $PASSWORD > /tmp/password'
                 // sh "docker login -u ${DOCKERHUB_CREDENTIALS_USR} -p ${DOCKERHUB_CREDENTIALS_PWD}"
                 sh 'echo $PASSWORD | docker login -u $USERNAME --password-stdin'
@@ -65,6 +69,13 @@ node {
 
         //   }
         sh "docker push ${imageName}:${tag}"
+
+        } else {
+            echo 'I execute elsewhere'
+        }
+
+
+
 
     // sh "docker login -u ${DOCKERHUB_CREDENTIALS_USR} -p ${DOCKERHUB_CREDENTIALS_PWD}"
     // sh "docker login -u ${dockerHubUsr} -p ${dockerHubPwd}"
