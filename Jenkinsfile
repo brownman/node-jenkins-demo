@@ -1,44 +1,85 @@
-pipeline {
-    agent any
-    stages {
-        stage('Tests') {
-            steps {
-//                 script {
-//                    docker.image('node:10-stretch').inside { c ->
-                        echo 'Building..'
-                        sh 'npm install'
-                        echo 'Testing..'
-                        sh 'npm test'
-//                         sh "docker logs ${c.id}"
-//                    }
-//                 }
-            }
-        }
-        stage('Build and push docker image') {
-            steps {
-                script {
-                    def dockerImage = docker.build("antonml/node-demo:master")
-                    docker.withRegistry('', 'demo-docker') {
-                        dockerImage.push('master')
-                    }
-                }
-            }
-        }
-        stage('Deploy to remote docker host') {
-            environment {
-                DOCKER_HOST_CREDENTIALS = credentials('demo-docker')
-            }
-            steps {
-                script {
-//                     sh 'docker login -u $DOCKER_HOST_CREDENTIALS_USR -p $DOCKER_HOST_CREDENTIALS_PSW 127.0.0.1:2375'
-                    sh 'docker pull antonml/node-demo:master'
-                    sh 'docker stop node-demo'
-                    sh 'docker rm node-demo'
-                    sh 'docker rmi antonml/node-demo:current'
-                    sh 'docker tag antonml/node-demo:master antonml/node-demo:current'
-                    sh 'docker run -d --name node-demo -p 80:3000 antonml/node-demo:current'
-                }
-            }
+#!groovy
+
+node {
+    // stage('init') {
+    //     // git clone
+    //     checkout scm
+    // }
+    def dockerfile = 'Dockerfile'
+    def repo_name = 'node-jenkins-demo'
+    def imageName = 'mostuf556/node-jenkins-demo'
+    def tag = 'latest' //1.0.${env.BUILD_ID}
+
+    stage('prepare') {
+        git url: "https://github.com/brownman/${repo_name}.git"
+        sh 'ls -la'
+    }
+
+    // stage('SCM Checkout') {
+    //     git credentialsId: 'git-creds', url: 'https://github.com/brownman/node-hello.git'
+    // }
+
+    stage('Build Docker Image and run test') {
+            // sh 'docker build -t mosut/my-app:2.0.0 .'
+            // customImage = docker.build("${imageName}:${env.BUILD_ID}", "-f ${dockerfile} .")
+
+            def testImage = docker.build("${imageName}",  "-f ${dockerfile} .")
+
+        testImage.inside {
+            sh 'npm install'
+
+            sh 'npm test'
         }
     }
+
+        // stage('Push to docker hub (branch: master)') {
+        //     // when {
+        //     //     // skip this stage unless branch is NOT master
+        //     //     branch 'master'
+        //     // }
+        //     environment {
+        //         DOCKERHUB_CREDENTIALS = credentials('docker_hub_access_token')
+        //     }
+
+        // sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
+        //         sh 'docker push $DOCKERHUB_CREDENTIALS_USR/$repo_name:$tag'
+        // //    sh 'docker logout'
+        // sh 'docker logout'
+        // //  post('logout') {
+        // //     always {
+        // //             sh 'docker logout'
+        // //     }
+        // // }
+        // } //stage
+
+    stage('Push Docker Image') {
+        withCredentials([usernamePassword(credentialsId: 'docker_hub_access_token', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                //   sh 'echo $USERNAME -p $PASSWORD > /tmp/password'
+                // sh "docker login -u ${DOCKERHUB_CREDENTIALS_USR} -p ${DOCKERHUB_CREDENTIALS_PWD}"
+                sh 'echo $PASSWORD | docker login -u $USERNAME --password-stdin'
+        }
+
+//         withCredentials([string(credentialsId: 'docker_hub_access_token', variable: 'DOCKERHUB_CREDENTIALS')]) { //
+//             sh 'env > /tmp/env2'
+
+        //   }
+        sh "docker push ${imageName}:${tag}"
+
+    // sh "docker login -u ${DOCKERHUB_CREDENTIALS_USR} -p ${DOCKERHUB_CREDENTIALS_PWD}"
+    // sh "docker login -u ${dockerHubUsr} -p ${dockerHubPwd}"
+    }
+
+    // docker.withRegistry('https://docker.hub.com', 'docker_hub_access_token') {
+    //     def customImage = docker.build("${imageName}:${env.BUILD_ID}")
+
+//     /* Push the container to the custom Registry */
+//     customImage.push()
+// }
 }
+
+//where to run ?
+    // docker.withServer('tcp://swarm.example.com:2376', 'swarm-certs') {
+    //     docker.image('mysql:5').withRun('-p 3306:3306') {
+    //         /* do things */
+    //     }
+    // }
