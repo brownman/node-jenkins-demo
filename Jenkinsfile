@@ -7,7 +7,7 @@ node  {
         def imageName = 'mostuf556/node-jenkins-demo'
         def docker_tag = "1.0.${env.BUILD_ID}"
         def err = false
-
+        def testImage 
 
 
         stage('init') {
@@ -15,7 +15,7 @@ node  {
         }
 
         stage('Build Docker Image and run test') {
-            def testImage = docker.build("${imageName}",  "-f ${dockerfile} .")
+            testImage = docker.build("${imageName}",  "-f ${dockerfile} .")
             testImage.inside {
                 sh 'npm install'
                 sh 'npm test'
@@ -45,8 +45,8 @@ node  {
 
         stage('Push image 2') {
             docker.withRegistry('https://registry.hub.docker.com', 'docker_hub_access_token') {
-                app.push("${env.BUILD_NUMBER}")
-//                 app.push("latest")
+                testImage.push("${env.BUILD_NUMBER}")
+//                 testImage.push("latest")
             }
         }
 
