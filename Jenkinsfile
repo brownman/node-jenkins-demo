@@ -13,6 +13,7 @@ node {
     stage('prepare') {
         git url: "https://github.com/brownman/${repo_name}.git"
         sh 'ls -la'
+        sh 'env > /tmp/env1'
     }
 
     // stage('SCM Checkout') {
