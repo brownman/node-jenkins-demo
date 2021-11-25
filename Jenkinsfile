@@ -22,35 +22,35 @@ node  {
             }
         }
 
-        stage('Push Docker Image') {
-            if (env.BRANCH_NAME == 'master') {
-                echo 'I only execute on the master branch'
+//         stage('Push Docker Image') {
+//             if (env.BRANCH_NAME == 'master') {
+//                 echo 'I only execute on the master branch'
 
-                try {
-                    withCredentials([usernamePassword(credentialsId: 'docker_hub_access_token', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                        sh 'echo $PASSWORD | docker login -u $USERNAME --password-stdin' }
+//                 try {
+//                     withCredentials([usernamePassword(credentialsId: 'docker_hub_access_token', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+//                         sh 'echo $PASSWORD | docker login -u $USERNAME --password-stdin' }
 
-                    sh "docker push ${imageName}:${docker_tag}"
-                    sh "docker push ${imageName}:latest"
+//                     sh "docker push ${imageName}:${docker_tag}"
+//                     sh "docker push ${imageName}:latest"
 
-                } catch (e) {
-                    throw e
-                } finally {
-                    sh 'docker logout'
-                }
-            } else {
-                echo 'skip docker push for non-master branch'
-            }
-        }
-
-//         stage('Push image 2') {
-//             docker.withRegistry('https://registry.hub.docker.com', 'docker_hub_access_token') {
-//                 app.push("${env.BUILD_NUMBER}")
-//                 app.push("latest")
+//                 } catch (e) {
+//                     throw e
+//                 } finally {
+//                     sh 'docker logout'
+//                 }
+//             } else {
+//                 echo 'skip docker push for non-master branch'
 //             }
 //         }
 
-    } /*try*/ catch (error) {
+        stage('Push image 2') {
+            docker.withRegistry('https://registry.hub.docker.com', 'docker_hub_access_token') {
+                app.push("${env.BUILD_NUMBER}")
+//                 app.push("latest")
+            }
+        }
+
+    } catch(Exception error) {
         // err = true
         echo "caught error ${error}"
     } finally {
