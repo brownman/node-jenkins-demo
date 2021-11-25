@@ -31,31 +31,30 @@ node  {
                         sh 'echo $PASSWORD | docker login -u $USERNAME --password-stdin' }
 
                     sh "docker push ${imageName}:${docker_tag}"
-                                        sh "docker push ${imageName}:latest"
+                    sh "docker push ${imageName}:latest"
 
                 } catch (e) {
-                                            sh 'docker logout'
-
-                        throw e
+                    throw e
                 } finally {
-                                                                sh 'docker logout'
-
+                    sh 'docker logout'
                 }
             } else {
                 echo 'skip docker push for non-master branch'
             }
         }
 
-        stage('Push image 2') {
-            docker.withRegistry('https://registry.hub.docker.com', 'docker_hub_access_token') {
-                app.push("${env.BUILD_NUMBER}")
-                app.push("latest1")
-            }
-        }
+//         stage('Push image 2') {
+//             docker.withRegistry('https://registry.hub.docker.com', 'docker_hub_access_token') {
+//                 app.push("${env.BUILD_NUMBER}")
+//                 app.push("latest")
+//             }
+//         }
 
     } /*try*/ catch (error) {
         // err = true
         echo "caught error ${error}"
+    } finally {
+        sh 'docker logout'
     }
 
 
