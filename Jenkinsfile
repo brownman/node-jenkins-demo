@@ -46,7 +46,7 @@ node  {
         stage('Push image 2') {
             docker.withRegistry('https://registry.hub.docker.com', 'docker_hub_access_token') {
                 testImage.push("${env.BUILD_NUMBER}")
-//                 testImage.push("latest")
+                testImage.push("latest")
             }
         }
 
